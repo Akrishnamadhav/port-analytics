@@ -23,7 +23,7 @@ export default function Layout() {
   const { user } = useAuth();
   const location = useLocation();
 
-  const pageTitle = pageTitleMap[location.pathname] || 'Port Authority';
+  const pageTitle = pageTitleMap[location.pathname] || 'Port Analytics';
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || '?';
 
   return (
