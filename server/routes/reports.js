@@ -192,6 +192,23 @@ router.get('/pending', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// GET /api/reports/approved — admin only
+router.get('/approved', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT r.*, u.name as uploader_name
+       FROM reports r
+       LEFT JOIN users u ON r.uploaded_by = u.id
+       WHERE r.status = 'approved'
+       ORDER BY r.uploaded_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Get approved reports error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/reports/:id — admin only
 router.get('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -326,6 +343,26 @@ router.patch('/:id/reject', authenticate, authorize('admin'), async (req, res) =
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Reject report error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/reports/:id — admin only
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id, 10);
+    if (isNaN(reportId)) {
+      return res.status(400).json({ error: 'Invalid report ID' });
+    }
+
+    const result = await pool.query('DELETE FROM reports WHERE id = $1 RETURNING *', [reportId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    res.json({ message: 'Report deleted successfully', report: result.rows[0] });
+  } catch (err) {
+    console.error('Delete report error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

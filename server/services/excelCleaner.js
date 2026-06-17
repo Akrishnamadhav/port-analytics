@@ -97,7 +97,8 @@ function cleanExcelFile(fileBuffer, reportYear) {
   // RULE 4: Text blanks → placeholder
   rows.forEach(r => {
     if (!r.party_name || String(r.party_name).trim() === '') r.party_name = 'Unknown';
-    const textFields = ['vcn', 'berth', 'commodity', 'sor_commodity', 'account_code', 'charge_name', 'party_code', 'voyage_type', 'invoice_no', 'voyage_no', 'nature_of_ship', 'invoice_group', 'sub_group', 'vessel_type', 'commodity_group', 'reference_no', 'currency'];
+    if (!r.currency || String(r.currency).trim() === '') r.currency = 'INR';
+    const textFields = ['vcn', 'berth', 'commodity', 'sor_commodity', 'account_code', 'charge_name', 'party_code', 'voyage_type', 'invoice_no', 'voyage_no', 'nature_of_ship', 'invoice_group', 'sub_group', 'vessel_type', 'commodity_group', 'reference_no'];
     textFields.forEach(f => {
       if (!r[f] || String(r[f]).trim() === '') r[f] = 'Not Available';
     });

@@ -49,7 +49,7 @@ const TopShippingLines = () => {
     if (!selectedYear) return;
     setLoading(true);
     try {
-      const res = await api.get(`/api/stats/company-revenue-share?year=${selectedYear}`);
+      const res = await api.get(`/api/stats/top-shipping-lines?year=${selectedYear}&metric=${metric}&limit=${limit}`);
       setData(res.data || []);
     } catch (err) {
       console.error('Failed to fetch company data:', err);
@@ -57,16 +57,14 @@ const TopShippingLines = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedYear]);
+  }, [selectedYear, metric, limit]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Process data: sort by selected metric, take top N
-  const processedData = [...data]
-    .sort((a, b) => (b[metric] || 0) - (a[metric] || 0))
-    .slice(0, limit);
+  // Process data: already sorted and limited by backend
+  const processedData = data;
 
   const tooltipFormatter = (value) => {
     if (metric === 'revenue') return formatINR(value);
@@ -101,6 +99,7 @@ const TopShippingLines = () => {
           onChange={(e) => setSelectedYear(e.target.value)}
           className="px-3 py-2 border border-port-border rounded-lg text-sm bg-white text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy/30"
         >
+          <option value="all">All Years</option>
           {years.map((year) => (
             <option key={year} value={year}>
               {year}
@@ -162,7 +161,7 @@ const TopShippingLines = () => {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
             <YAxis
               type="category"
-              dataKey="company"
+              dataKey="name"
               width={150}
               tick={{ fontSize: 11, fill: '#64748b' }}
               axisLine={false}
@@ -185,7 +184,7 @@ const TopShippingLines = () => {
                 fontSize: '13px',
               }}
             />
-            <Bar dataKey={metric} fill="#d4a843" radius={[0, 6, 6, 0]} />
+            <Bar dataKey="value" fill="#d4a843" radius={[0, 6, 6, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}

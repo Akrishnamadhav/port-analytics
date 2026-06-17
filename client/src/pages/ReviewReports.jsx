@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -31,7 +32,9 @@ const formatDate = (date) => {
 
 const ReviewReports = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('pending');
   const [reports, setReports] = useState([]);
+  const [approvedReports, setApprovedReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState(null);
   const [stagingData, setStagingData] = useState([]);
@@ -55,9 +58,25 @@ const ReviewReports = () => {
     }
   };
 
+  const fetchApprovedReports = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/api/reports/approved');
+      setApprovedReports(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch approved reports:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchPendingReports();
-  }, []);
+    if (activeTab === 'pending') {
+      fetchPendingReports();
+    } else {
+      fetchApprovedReports();
+    }
+  }, [activeTab]);
 
   const fetchStagingData = async (reportId, page = 1) => {
     try {
@@ -128,6 +147,26 @@ const ReviewReports = () => {
     }
   };
 
+  const handleDelete = async (e, report) => {
+    e.stopPropagation();
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the approved report for year ${report.year} (${report.original_filename})? This will permanently delete its financial statistics and operational records from the system.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+      await api.delete(`/api/reports/${report.id || report._id}`);
+      setMessage('Report deleted successfully.');
+      fetchApprovedReports();
+    } catch (err) {
+      console.error('Failed to delete report:', err);
+      setMessage(err.response?.data?.error || 'Failed to delete report.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stagingColumns =
     stagingData.length > 0 ? Object.keys(stagingData[0]).filter((k) => k !== '_id' && k !== '__v') : [];
 
@@ -148,9 +187,35 @@ const ReviewReports = () => {
             Review Reports
           </h1>
           <p className="text-port-muted text-sm mt-1">
-            {reports.length} pending report{reports.length !== 1 ? 's' : ''} awaiting review
+            {activeTab === 'pending'
+              ? `${reports.length} pending report${reports.length !== 1 ? 's' : ''} awaiting review`
+              : `${approvedReports.length} approved report${approvedReports.length !== 1 ? 's' : ''} in system`}
           </p>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+            activeTab === 'pending'
+              ? 'border-port-navy text-port-navy'
+              : 'border-transparent text-port-muted hover:text-port-text'
+          }`}
+        >
+          Pending Review
+        </button>
+        <button
+          onClick={() => setActiveTab('approved')}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+            activeTab === 'approved'
+              ? 'border-port-navy text-port-navy'
+              : 'border-transparent text-port-muted hover:text-port-text'
+          }`}
+        >
+          Approved Reports
+        </button>
       </div>
 
       {/* Success/Error message */}
@@ -171,53 +236,114 @@ const ReviewReports = () => {
         </div>
       )}
 
-      {reports.length === 0 ? (
-        <div className="flex flex-col items-center py-16">
-          <ClipboardCheck className="w-16 h-16 text-gray-300" />
-          <p className="text-lg font-medium text-port-muted mt-4">No pending reports</p>
-          <p className="text-sm text-gray-400">All reports have been reviewed</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-port-navy text-white text-left text-sm">
-                  <th className="px-4 py-3 font-medium">Uploader</th>
-                  <th className="px-4 py-3 font-medium">Year</th>
-                  <th className="px-4 py-3 font-medium">Filename</th>
-                  <th className="px-4 py-3 font-medium">Row Count</th>
-                  <th className="px-4 py-3 font-medium">Revenue Preview</th>
-                  <th className="px-4 py-3 font-medium">Upload Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report) => (
-                  <tr
-                    key={report._id || report.id}
-                    onClick={() => openDetail(report)}
-                    className="border-b border-gray-100 hover:bg-blue-50 text-sm cursor-pointer transition-colors"
-                  >
-                    <td className="px-4 py-3 text-port-text font-medium">
-                      {report.uploader?.name || report.uploader_name || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-port-text">{report.year}</td>
-                    <td className="px-4 py-3 text-port-text">{report.original_filename}</td>
-                    <td className="px-4 py-3 text-port-text">
-                      {report.row_count?.toLocaleString() ?? '-'}
-                    </td>
-                    <td className="px-4 py-3 text-port-text font-medium">
-                      {formatINR(report.total_revenue_preview)}
-                    </td>
-                    <td className="px-4 py-3 text-port-muted">
-                      {formatDate(report.uploaded_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'pending' ? (
+        reports.length === 0 ? (
+          <div className="flex flex-col items-center py-16">
+            <ClipboardCheck className="w-16 h-16 text-gray-300" />
+            <p className="text-lg font-medium text-port-muted mt-4">No pending reports</p>
+            <p className="text-sm text-gray-400">All reports have been reviewed</p>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-port-navy text-white text-left text-sm">
+                    <th className="px-4 py-3 font-medium">Uploader</th>
+                    <th className="px-4 py-3 font-medium">Year</th>
+                    <th className="px-4 py-3 font-medium">Filename</th>
+                    <th className="px-4 py-3 font-medium">Row Count</th>
+                    <th className="px-4 py-3 font-medium">Revenue Preview</th>
+                    <th className="px-4 py-3 font-medium">Upload Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr
+                      key={report._id || report.id}
+                      onClick={() => openDetail(report)}
+                      className="border-b border-gray-100 hover:bg-blue-50 text-sm cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 text-port-text font-medium">
+                        {report.uploader?.name || report.uploader_name || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-port-text">{report.year}</td>
+                      <td className="px-4 py-3 text-port-text">{report.original_filename}</td>
+                      <td className="px-4 py-3 text-port-text">
+                        {report.row_count?.toLocaleString() ?? '-'}
+                      </td>
+                      <td className="px-4 py-3 text-port-text font-medium">
+                        {formatINR(report.total_revenue_preview)}
+                      </td>
+                      <td className="px-4 py-3 text-port-muted">
+                        {formatDate(report.uploaded_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      ) : (
+        approvedReports.length === 0 ? (
+          <div className="flex flex-col items-center py-16">
+            <CheckCircle className="w-16 h-16 text-gray-300" />
+            <p className="text-lg font-medium text-port-muted mt-4">No approved reports</p>
+            <p className="text-sm text-gray-400">Approved reports will show up here</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-port-navy text-white text-left text-sm">
+                    <th className="px-4 py-3 font-medium">Uploader</th>
+                    <th className="px-4 py-3 font-medium">Year</th>
+                    <th className="px-4 py-3 font-medium">Filename</th>
+                    <th className="px-4 py-3 font-medium">Row Count</th>
+                    <th className="px-4 py-3 font-medium">Total Revenue</th>
+                    <th className="px-4 py-3 font-medium">Approved Date</th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvedReports.map((report) => (
+                    <tr
+                      key={report._id || report.id}
+                      onClick={() => openDetail(report)}
+                      className="border-b border-gray-100 hover:bg-blue-50 text-sm cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 text-port-text font-medium">
+                        {report.uploader_name || report.uploader?.name || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-port-text">{report.year}</td>
+                      <td className="px-4 py-3 text-port-text">{report.original_filename}</td>
+                      <td className="px-4 py-3 text-port-text">
+                        {report.row_count?.toLocaleString() ?? '-'}
+                      </td>
+                      <td className="px-4 py-3 text-port-text font-medium">
+                        {formatINR(report.total_revenue_preview)}
+                      </td>
+                      <td className="px-4 py-3 text-port-muted">
+                        {formatDate(report.reviewed_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={(e) => handleDelete(e, report)}
+                          className="p-1.5 hover:bg-red-50 text-red-600 hover:text-red-800 rounded-lg transition-all"
+                          title="Delete Approved Report"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
       )}
 
       {/* Detail Modal */}
@@ -348,61 +474,70 @@ const ReviewReports = () => {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-100 flex items-center gap-4">
-              {showRejectInput ? (
-                <div className="flex-1 flex items-center gap-3">
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Enter reason for rejection..."
-                    rows={2}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
-                  />
-                  <button
-                    onClick={handleReject}
-                    disabled={actionLoading === 'reject' || !rejectReason.trim()}
-                    className="bg-red-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                  >
-                    {actionLoading === 'reject' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
+            <div className="p-6 border-t border-gray-100 flex items-center justify-end gap-4">
+              {selectedReport.status === 'pending' ? (
+                showRejectInput ? (
+                  <div className="flex-1 flex items-center gap-3">
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="Enter reason for rejection..."
+                      rows={2}
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                    />
+                    <button
+                      onClick={handleReject}
+                      disabled={actionLoading === 'reject' || !rejectReason.trim()}
+                      className="bg-red-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                    >
+                      {actionLoading === 'reject' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      Confirm Reject
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowRejectInput(false);
+                        setRejectReason('');
+                      }}
+                      className="text-gray-500 hover:text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleApprove}
+                      disabled={actionLoading === 'approve'}
+                      className="bg-port-success text-white px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    >
+                      {actionLoading === 'approve' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => setShowRejectInput(true)}
+                      disabled={!!actionLoading}
+                      className="bg-port-danger text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    >
                       <XCircle className="w-4 h-4" />
-                    )}
-                    Confirm Reject
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRejectInput(false);
-                      setRejectReason('');
-                    }}
-                    className="text-gray-500 hover:text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                      Reject
+                    </button>
+                  </>
+                )
               ) : (
-                <>
-                  <button
-                    onClick={handleApprove}
-                    disabled={actionLoading === 'approve'}
-                    className="bg-port-success text-white px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
-                  >
-                    {actionLoading === 'approve' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4" />
-                    )}
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => setShowRejectInput(true)}
-                    disabled={!!actionLoading}
-                    className="bg-port-danger text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    Reject
-                  </button>
-                </>
+                <button
+                  onClick={closeModal}
+                  className="bg-port-navy text-white px-6 py-2.5 bg-port-navy hover:bg-port-navy-dark rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
               )}
             </div>
           </div>

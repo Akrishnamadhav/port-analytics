@@ -16,7 +16,6 @@ import CreateUser from './pages/CreateUser';
 import YearlyComparison from './pages/charts/YearlyComparison';
 import HistoricalTrends from './pages/charts/HistoricalTrends';
 import RevenueBreakdown from './pages/charts/RevenueBreakdown';
-import ProfitVsExpenses from './pages/charts/ProfitVsExpenses';
 import TopShippingLines from './pages/charts/TopShippingLines';
 import CompanyRevenueShare from './pages/charts/CompanyRevenueShare';
 import CargoBreakdown from './pages/charts/CargoBreakdown';
@@ -45,7 +44,6 @@ export default function App() {
             <Route path="/charts/yearly-comparison" element={<YearlyComparison />} />
             <Route path="/charts/historical-trends" element={<HistoricalTrends />} />
             <Route path="/charts/revenue-breakdown" element={<RevenueBreakdown />} />
-            <Route path="/charts/profit-vs-expenses" element={<ProfitVsExpenses />} />
             <Route path="/charts/top-shipping-lines" element={<TopShippingLines />} />
             <Route path="/charts/company-revenue-share" element={<CompanyRevenueShare />} />
             <Route path="/charts/cargo-breakdown" element={<CargoBreakdown />} />

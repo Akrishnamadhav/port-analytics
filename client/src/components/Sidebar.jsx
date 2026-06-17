@@ -19,7 +19,6 @@ const chartSubItems = [
   { label: 'Yearly Comparison', path: '/charts/yearly-comparison' },
   { label: 'Historical Trends', path: '/charts/historical-trends' },
   { label: 'Revenue Breakdown', path: '/charts/revenue-breakdown' },
-  { label: 'Profit vs. Expenses', path: '/charts/profit-vs-expenses' },
   { label: 'Top Shipping Lines', path: '/charts/top-shipping-lines' },
   { label: 'Company Revenue Share', path: '/charts/company-revenue-share' },
   { label: 'Cargo Breakdown', path: '/charts/cargo-breakdown' },

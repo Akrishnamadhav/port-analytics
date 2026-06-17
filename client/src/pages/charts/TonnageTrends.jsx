@@ -26,30 +26,22 @@ const TonnageTrends = () => {
     const fetchHistorical = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/api/stats/historical-trends');
+        const res = await api.get('/api/stats/tonnage-trends?granularity=yearly');
         const trends = res.data || [];
-        const yearList = trends.map((item) => item.year).sort((a, b) => b - a);
+        const yearList = trends.map((item) => parseInt(item.name, 10)).sort((a, b) => b - a);
         setYears(yearList);
-        setYearlyData(
-          trends
-            .map((item) => ({
-              year: item.year,
-              tonnage: item.tonnage || 0,
-            }))
-            .sort((a, b) => a.year - b.year)
-        );
+        const yearlyMapped = trends
+          .map((item) => ({
+            name: item.name,
+            tonnage: item.value || 0,
+          }))
+          .sort((a, b) => parseInt(a.name, 10) - parseInt(b.name, 10));
+        setYearlyData(yearlyMapped);
         if (yearList.length > 0) {
           setSelectedYear(yearList[0]);
         }
         if (mode === 'yearly') {
-          setData(
-            trends
-              .map((item) => ({
-                year: item.year,
-                tonnage: item.tonnage || 0,
-              }))
-              .sort((a, b) => a.year - b.year)
-          );
+          setData(yearlyMapped);
         }
       } catch (err) {
         console.error('Failed to fetch historical trends:', err);
@@ -65,8 +57,12 @@ const TonnageTrends = () => {
     if (mode !== 'monthly' || !selectedYear) return;
     setLoading(true);
     try {
-      const res = await api.get(`/api/stats/tonnage-trends?year=${selectedYear}`);
-      setData(res.data || []);
+      const res = await api.get(`/api/stats/tonnage-trends?granularity=monthly&year=${selectedYear}`);
+      const monthlyMapped = (res.data || []).map((item) => ({
+        name: item.name,
+        tonnage: item.value || 0,
+      }));
+      setData(monthlyMapped);
     } catch (err) {
       console.error('Failed to fetch tonnage trends:', err);
       setData([]);
@@ -135,6 +131,7 @@ const TonnageTrends = () => {
               onChange={(e) => setSelectedYear(e.target.value)}
               className="px-3 py-2 border border-port-border rounded-lg text-sm bg-white text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy/30"
             >
+              <option value="all">All Years</option>
               {years.map((year) => (
                 <option key={year} value={year}>
                   {year}
@@ -160,7 +157,7 @@ const TonnageTrends = () => {
           <ComposedChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
             <XAxis
-              dataKey={mode === 'yearly' ? 'year' : 'month'}
+              dataKey="name"
               tick={{ fontSize: 12, fill: '#64748b' }}
               axisLine={false}
               tickLine={false}

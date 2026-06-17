@@ -102,6 +102,7 @@ export default function RevenueBreakdown() {
             onChange={(e) => setSelectedYear(e.target.value)}
             className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy"
           >
+            <option value="all">All Years</option>
             {years.map((year) => (
               <option key={year} value={year}>
                 {year}

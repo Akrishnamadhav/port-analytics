@@ -158,6 +158,7 @@ const CargoBreakdown = () => {
           onChange={(e) => setSelectedYear(e.target.value)}
           className="px-3 py-2 border border-port-border rounded-lg text-sm bg-white text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy/30"
         >
+          <option value="all">All Years</option>
           {years.map((year) => (
             <option key={year} value={year}>
               {year}

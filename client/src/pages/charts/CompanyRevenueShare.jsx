@@ -98,14 +98,14 @@ const CompanyRevenueShare = () => {
   // Process: sort by revenue desc, top 8, aggregate rest as 'Others'
   const processedData = (() => {
     if (!data.length) return [];
-    const sorted = [...data].sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
+    const sorted = [...data].sort((a, b) => (b.value || 0) - (a.value || 0));
     const top8 = sorted.slice(0, 8);
     const rest = sorted.slice(8);
 
-    const othersRevenue = rest.reduce((sum, item) => sum + (item.revenue || 0), 0);
+    const othersRevenue = rest.reduce((sum, item) => sum + (item.value || 0), 0);
     const result = top8.map((item) => ({
-      name: item.company,
-      value: item.revenue || 0,
+      name: item.name,
+      value: item.value || 0,
     }));
 
     if (othersRevenue > 0) {
@@ -140,6 +140,7 @@ const CompanyRevenueShare = () => {
           onChange={(e) => setSelectedYear(e.target.value)}
           className="px-3 py-2 border border-port-border rounded-lg text-sm bg-white text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy/30"
         >
+          <option value="all">All Years</option>
           {years.map((year) => (
             <option key={year} value={year}>
               {year}

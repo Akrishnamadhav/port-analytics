@@ -8,7 +8,6 @@ const pageTitleMap = {
   '/charts/yearly-comparison': 'Yearly Comparison',
   '/charts/historical-trends': 'Historical Trends',
   '/charts/revenue-breakdown': 'Revenue Breakdown',
-  '/charts/profit-vs-expenses': 'Profit vs. Expenses',
   '/charts/top-shipping-lines': 'Top Shipping Lines',
   '/charts/company-revenue-share': 'Company Revenue Share',
   '/charts/cargo-breakdown': 'Cargo Breakdown',

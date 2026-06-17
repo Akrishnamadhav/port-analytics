@@ -33,29 +33,55 @@ const CHART_COLORS = ['#003366', '#d4a843', '#004080', '#059669', '#dc2626', '#8
 export default function MainDashboard() {
   const [trendsData, setTrendsData] = useState([]);
   const [companyData, setCompanyData] = useState([]);
+  const [summaryData, setSummaryData] = useState(null);
+  const [years, setYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Fetch years and historical trends on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const [trendsRes, companyRes] = await Promise.all([
+        const [trendsRes, tonnageRes] = await Promise.all([
           api.get('/api/stats/historical-trends'),
-          api.get('/api/stats/company-revenue-share'),
+          api.get('/api/stats/tonnage-trends?granularity=yearly'),
         ]);
-        setTrendsData(trendsRes.data);
-        setCompanyData(companyRes.data);
+        setTrendsData(trendsRes.data || []);
+        
+        const yearList = (tonnageRes.data || []).map((item) => parseInt(item.name, 10)).sort((a, b) => b - a);
+        setYears(yearList);
+        if (yearList.length > 0) {
+          setSelectedYear(yearList[0]);
+        }
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
+        console.error('Failed to fetch initial dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchInitialData();
   }, []);
 
-  const latestYear =
-    trendsData.length > 0 ? trendsData[trendsData.length - 1] : {};
+  // Fetch summary and company data when selectedYear changes
+  useEffect(() => {
+    if (!selectedYear) return;
+    const fetchYearlyData = async () => {
+      try {
+        const [summaryRes, companyRes] = await Promise.all([
+          api.get(`/api/stats/summary?year=${selectedYear}`),
+          api.get(`/api/stats/company-revenue-share?year=${selectedYear}`),
+        ]);
+        setSummaryData(summaryRes.data);
+        setCompanyData(companyRes.data);
+      } catch (err) {
+        console.error('Failed to fetch yearly dashboard data:', err);
+      }
+    };
+    fetchYearlyData();
+  }, [selectedYear]);
+
+  const latestYear = summaryData || {};
 
   if (loading) {
     return (
@@ -109,6 +135,32 @@ export default function MainDashboard() {
 
   return (
     <div className="p-6 space-y-8">
+      {/* Header with Year Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-port-navy">Port Operations Dashboard</h1>
+          <p className="text-sm text-port-muted">Real-time financial and operational key performance indicators</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-port-text">
+            Fiscal Year:
+          </span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white text-port-text focus:outline-none focus:ring-2 focus:ring-port-navy/30 shadow-sm"
+          >
+            <option value="all">All Years</option>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiCards.map((card, idx) => {
@@ -168,13 +220,13 @@ export default function MainDashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <YAxis
                 type="category"
-                dataKey="company"
+                dataKey="name"
                 width={120}
                 tick={{ fontSize: 12 }}
               />
               <XAxis type="number" tickFormatter={formatINR} />
               <Tooltip formatter={(v) => formatINR(v)} />
-              <Bar dataKey="revenue" fill="#d4a843" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="value" fill="#d4a843" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
