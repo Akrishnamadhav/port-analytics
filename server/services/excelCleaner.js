@@ -1,5 +1,44 @@
 const XLSX = require('xlsx');
 
+function parseExcelDate(val) {
+  if (val === undefined || val === null) return null;
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? null : val;
+  }
+  
+  const str = String(val).trim();
+  if (str === '') return null;
+
+  // Try parsing DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  const matchDmy = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (matchDmy) {
+    const day = parseInt(matchDmy[1], 10);
+    const month = parseInt(matchDmy[2], 10) - 1; // 0-indexed month
+    const year = parseInt(matchDmy[3], 10);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+
+  // Try parsing YYYY-MM-DD
+  const matchYmd = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (matchYmd) {
+    const year = parseInt(matchYmd[1], 10);
+    const month = parseInt(matchYmd[2], 10) - 1;
+    const day = parseInt(matchYmd[3], 10);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+
+  // Fallback to standard Date parsing
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+
 function cleanExcelFile(fileBuffer, reportYear) {
   const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -104,45 +143,48 @@ function cleanExcelFile(fileBuffer, reportYear) {
     });
   });
 
-  // RULE 5: Vessel Name nearest-fill
+  // RULE 5: Vessel Name fill-forward (look forward for next valid name, with backward fallback)
   for (let i = 0; i < rows.length; i++) {
-    if (!rows[i].vessel_name || String(rows[i].vessel_name).trim() === '') {
+    if (!rows[i].vessel_name || String(rows[i].vessel_name).trim() === '' || rows[i].vessel_name === 'Not Available') {
       let found = false;
-      for (let dist = 1; dist < rows.length && !found; dist++) {
-        const above = i - dist >= 0 ? rows[i - dist].vessel_name : null;
-        const below = i + dist < rows.length ? rows[i + dist].vessel_name : null;
-        const aboveValid = above && String(above).trim() !== '' && above !== 'Not Available';
-        const belowValid = below && String(below).trim() !== '' && below !== 'Not Available';
-        if (aboveValid && belowValid) {
-          rows[i].vessel_name = above; // tie-break: use above
+      
+      // Search forward
+      for (let j = i + 1; j < rows.length; j++) {
+        const val = rows[j].vessel_name;
+        if (val && String(val).trim() !== '' && val !== 'Not Available') {
+          rows[i].vessel_name = val;
           found = true;
-        } else if (aboveValid) {
-          rows[i].vessel_name = above;
-          found = true;
-        } else if (belowValid) {
-          rows[i].vessel_name = below;
-          found = true;
+          break;
         }
       }
-      if (!found) rows[i].vessel_name = 'Not Available';
+      
+      // Search backward fallback (at the end of the sheet)
+      if (!found) {
+        for (let j = i - 1; j >= 0; j--) {
+          const val = rows[j].vessel_name;
+          if (val && String(val).trim() !== '' && val !== 'Not Available') {
+            rows[i].vessel_name = val;
+            found = true;
+            break;
+          }
+        }
+      }
+      
+      if (!found) {
+        rows[i].vessel_name = 'Not Available';
+      }
     }
   }
 
   // RULE 6: Currency normalization (absolute positive value)
+  // Note: The invoice_amount column in the spreadsheet is already represented in INR.
   rows.forEach(r => {
-    if (r.exchange_rate === 0) r.exchange_rate = 1; // avoid zero multiplication
-    r.amount_inr = Math.abs(r.invoice_amount * r.exchange_rate);
+    r.amount_inr = Math.abs(r.invoice_amount);
   });
 
   // Parse invoice_date to proper date
   rows.forEach(r => {
-    if (r.invoice_date instanceof Date) {
-      // already a date
-    } else {
-      // try parsing
-      const d = new Date(r.invoice_date);
-      r.invoice_date = isNaN(d.getTime()) ? null : d;
-    }
+    r.invoice_date = parseExcelDate(r.invoice_date);
   });
 
   // Drop any rows where date parsing failed
