@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-port-navy: #003366;
+  --color-port-navy-dark: #00264d;
+  --color-port-navy-light: #004080;
+  --color-port-accent: #d4a843;
+  --color-port-accent-light: #e8c96a;
+  --color-port-bg: #f4f6f8;
+  --color-port-card: #ffffff;
+  --color-port-text: #1a1a2e;
+  --color-port-muted: #6b7280;
+  --color-port-success: #059669;
+  --color-port-danger: #dc2626;
+  --color-port-warning: #f59e0b;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-port-bg);
+    color: var(--color-port-text);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #003366 transparent;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wave {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-5px) translateY(-3px); }
+  50% { transform: translateX(0) translateY(-5px); }
+  75% { transform: translateX(5px) translateY(-3px); }
+  100% { transform: translateX(0) translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out forwards;
+}
+
+.animate-wave {
+  animation: wave 6s ease-in-out infinite;
+}
