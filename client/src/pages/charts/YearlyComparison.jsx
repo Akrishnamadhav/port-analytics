@@ -30,14 +30,14 @@ export default function YearlyComparison() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/api/stats/historical-trends');
+        const res = await api.get('/api/stats/yearly-comparison');
         const trends = res.data;
         setData(trends);
         // Default: last 3 years
         const defaultYears = trends.slice(-3).map((d) => d.year);
         setSelectedYears(new Set(defaultYears));
       } catch (err) {
-        console.error('Failed to fetch historical trends:', err);
+        console.error('Failed to fetch yearly comparison:', err);
       } finally {
         setLoading(false);
       }

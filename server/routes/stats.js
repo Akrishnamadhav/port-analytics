@@ -98,25 +98,30 @@ router.get('/summary', async (req, res) => {
 router.get('/yearly-comparison', async (req, res) => {
   try {
     const yearsParam = req.query.years;
-    if (!yearsParam) {
-      return res.status(400).json({ error: 'years parameter is required (comma-separated)' });
-    }
+    let result;
 
-    const years = yearsParam.split(',').map(y => parseInt(y.trim(), 10)).filter(y => !isNaN(y));
-    if (years.length === 0) {
-      return res.status(400).json({ error: 'No valid years provided' });
+    if (yearsParam) {
+      const years = yearsParam.split(',').map(y => parseInt(y.trim(), 10)).filter(y => !isNaN(y));
+      if (years.length === 0) {
+        return res.status(400).json({ error: 'No valid years provided' });
+      }
+      const placeholders = years.map((_, i) => `$${i + 1}`).join(', ');
+      result = await pool.query(
+        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name) as vessels, SUM(grt) as tonnage
+         FROM port_statistics
+         WHERE year IN (${placeholders})
+         GROUP BY year
+         ORDER BY year`,
+        years
+      );
+    } else {
+      result = await pool.query(
+        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name) as vessels, SUM(grt) as tonnage
+         FROM port_statistics
+         GROUP BY year
+         ORDER BY year`
+      );
     }
-
-    // Build parameterized query for IN clause
-    const placeholders = years.map((_, i) => `$${i + 1}`).join(', ');
-    const result = await pool.query(
-      `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name) as vessels, SUM(grt) as tonnage
-       FROM port_statistics
-       WHERE year IN (${placeholders})
-       GROUP BY year
-       ORDER BY year`,
-      years
-    );
 
     res.json(result.rows.map(r => ({
       year: r.year,

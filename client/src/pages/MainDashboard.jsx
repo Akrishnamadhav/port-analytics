@@ -28,6 +28,11 @@ const formatINR = (num) => {
   if (abs >= 1e5) return `₹${(num / 1e5).toFixed(2)} L`;
   return `₹${num.toLocaleString('en-IN')}`;
 };
+
+const truncateName = (str, len = 20) => {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '...' : str;
+};
 const CHART_COLORS = ['#003366', '#d4a843', '#004080', '#059669', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316'];
 
 export default function MainDashboard() {
@@ -216,17 +221,29 @@ export default function MainDashboard() {
             Top Companies by Revenue
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart layout="vertical" data={companyData.slice(0, 5)}>
-              <CartesianGrid strokeDasharray="3 3" />
+            <BarChart layout="vertical" data={companyData.slice(0, 5)} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
               <YAxis
                 type="category"
                 dataKey="name"
-                width={120}
-                tick={{ fontSize: 12 }}
+                width={160}
+                tickFormatter={(val) => truncateName(val, 20)}
+                tick={{ fontSize: 11, fill: '#64748b' }}
+                axisLine={false}
+                tickLine={false}
               />
-              <XAxis type="number" tickFormatter={formatINR} />
-              <Tooltip formatter={(v) => formatINR(v)} />
-              <Bar dataKey="value" fill="#d4a843" radius={[0, 4, 4, 0]} />
+              <XAxis type="number" tickFormatter={formatINR} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                formatter={(v) => [formatINR(v), 'Revenue']}
+                contentStyle={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  fontSize: '13px',
+                }}
+              />
+              <Bar dataKey="value" fill="#d4a843" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

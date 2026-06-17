@@ -15,10 +15,8 @@ import CreateUser from './pages/CreateUser';
 // Chart Pages
 import YearlyComparison from './pages/charts/YearlyComparison';
 import HistoricalTrends from './pages/charts/HistoricalTrends';
-import RevenueBreakdown from './pages/charts/RevenueBreakdown';
 import TopShippingLines from './pages/charts/TopShippingLines';
 import CompanyRevenueShare from './pages/charts/CompanyRevenueShare';
-import CargoBreakdown from './pages/charts/CargoBreakdown';
 import TonnageTrends from './pages/charts/TonnageTrends';
 
 export default function App() {
@@ -43,10 +41,8 @@ export default function App() {
             {/* Customs Report charts */}
             <Route path="/charts/yearly-comparison" element={<YearlyComparison />} />
             <Route path="/charts/historical-trends" element={<HistoricalTrends />} />
-            <Route path="/charts/revenue-breakdown" element={<RevenueBreakdown />} />
             <Route path="/charts/top-shipping-lines" element={<TopShippingLines />} />
             <Route path="/charts/company-revenue-share" element={<CompanyRevenueShare />} />
-            <Route path="/charts/cargo-breakdown" element={<CargoBreakdown />} />
             <Route path="/charts/tonnage-trends" element={<TonnageTrends />} />
           </Route>
 
