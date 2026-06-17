@@ -11,7 +11,7 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === '.xlsx' || ext === '.xls') {
@@ -58,7 +58,7 @@ router.post('/upload', authenticate, authorize('analyst', 'admin'), upload.singl
 
     const report = reportResult.rows[0];
 
-    // Bulk insert cleaned rows into staging
+    // Bulk insert cleaned rows into staging in batches of 500
     if (rows.length > 0) {
       const columns = [
         'report_id', 'invoice_date', 'invoice_amount', 'sor_amount', 'discount_amount',
@@ -69,57 +69,61 @@ router.post('/upload', authenticate, authorize('analyst', 'admin'), upload.singl
         'voyage_type', 'voyage_no', 'invoice_no', 'nature_of_ship', 'reference_no', 'year'
       ];
 
-      // Build parameterized bulk insert
       const valuesPerRow = columns.length;
-      const valuePlaceholders = [];
-      const flatValues = [];
-      let paramIndex = 1;
+      const BATCH_SIZE = 500;
 
-      for (const row of rows) {
-        const rowPlaceholders = [];
-        const rowValues = [
-          report.id,
-          row.invoice_date,
-          row.invoice_amount,
-          row.sor_amount,
-          row.discount_amount,
-          row.currency,
-          row.exchange_rate,
-          row.amount_inr,
-          row.party_name,
-          row.party_code,
-          row.vessel_name,
-          row.vessel_type,
-          row.charge_name,
-          row.invoice_group,
-          row.sub_group,
-          row.account_code,
-          row.commodity,
-          row.commodity_group,
-          row.sor_commodity,
-          row.grt,
-          row.unit_quantity1,
-          row.unit_quantity2,
-          row.unit_rate,
-          row.vcn,
-          row.berth,
-          row.voyage_type,
-          row.voyage_no,
-          row.invoice_no,
-          row.nature_of_ship,
-          row.reference_no,
-          row.year,
-        ];
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batchRows = rows.slice(i, i + BATCH_SIZE);
+        const valuePlaceholders = [];
+        const flatValues = [];
+        let paramIndex = 1;
 
-        for (let k = 0; k < valuesPerRow; k++) {
-          rowPlaceholders.push(`$${paramIndex++}`);
+        for (const row of batchRows) {
+          const rowPlaceholders = [];
+          const rowValues = [
+            report.id,
+            row.invoice_date,
+            row.invoice_amount,
+            row.sor_amount,
+            row.discount_amount,
+            row.currency,
+            row.exchange_rate,
+            row.amount_inr,
+            row.party_name,
+            row.party_code,
+            row.vessel_name,
+            row.vessel_type,
+            row.charge_name,
+            row.invoice_group,
+            row.sub_group,
+            row.account_code,
+            row.commodity,
+            row.commodity_group,
+            row.sor_commodity,
+            row.grt,
+            row.unit_quantity1,
+            row.unit_quantity2,
+            row.unit_rate,
+            row.vcn,
+            row.berth,
+            row.voyage_type,
+            row.voyage_no,
+            row.invoice_no,
+            row.nature_of_ship,
+            row.reference_no,
+            row.year,
+          ];
+
+          for (let k = 0; k < valuesPerRow; k++) {
+            rowPlaceholders.push(`$${paramIndex++}`);
+          }
+          valuePlaceholders.push(`(${rowPlaceholders.join(', ')})`);
+          flatValues.push(...rowValues);
         }
-        valuePlaceholders.push(`(${rowPlaceholders.join(', ')})`);
-        flatValues.push(...rowValues);
-      }
 
-      const insertQuery = `INSERT INTO report_rows_staging (${columns.join(', ')}) VALUES ${valuePlaceholders.join(', ')}`;
-      await client.query(insertQuery, flatValues);
+        const insertQuery = `INSERT INTO report_rows_staging (${columns.join(', ')}) VALUES ${valuePlaceholders.join(', ')}`;
+        await client.query(insertQuery, flatValues);
+      }
     }
 
     await client.query('COMMIT');
@@ -147,7 +151,7 @@ router.post('/upload', authenticate, authorize('analyst', 'admin'), upload.singl
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File size exceeds 10MB limit' });
+      return res.status(400).json({ error: 'File size exceeds 15MB limit' });
     }
     return res.status(400).json({ error: err.message });
   }
