@@ -56,7 +56,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="py-6 px-5 flex items-center gap-3 border-b border-white/10">
         <Anchor className="w-8 h-8 text-port-accent" />
-        <span className="text-xl font-bold">Port Authority</span>
+        <span className="text-xl font-bold">Port Analytics</span>
       </div>
 
       {/* Navigation */}
