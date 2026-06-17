@@ -45,7 +45,7 @@ const Login = () => {
         {/* Content */}
         <Anchor className="w-24 h-24 text-port-accent animate-wave" />
         <h1 className="text-4xl lg:text-5xl font-extrabold text-white mt-6">
-          Port Authority
+          Port Analytics
         </h1>
         <p className="text-xl text-port-accent-light mt-2">
           Financial Analytics Platform

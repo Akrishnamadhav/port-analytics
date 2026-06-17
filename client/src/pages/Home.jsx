@@ -80,7 +80,7 @@ const Home = () => {
           Welcome back, {user?.name}!
         </h1>
         <p className="text-port-accent-light mt-2">
-          Port Authority Financial Analytics Platform
+          Port Financial Analytics Platform
         </p>
         <p className="text-white/60 text-sm mt-4">{today}</p>
       </div>
