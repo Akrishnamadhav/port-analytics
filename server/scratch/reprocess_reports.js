@@ -16,16 +16,16 @@ const pool = new Pool({
 async function main() {
   const client = await pool.connect();
   try {
-    // Get all pending reports
-    const reportsRes = await client.query("SELECT id, year, original_filename FROM reports WHERE status = 'pending' ORDER BY year");
+    // Get all reports regardless of status
+    const reportsRes = await client.query("SELECT id, year, status, original_filename FROM reports ORDER BY year");
     const reports = reportsRes.rows;
-    console.log(`Found ${reports.length} pending reports to reprocess.`);
+    console.log(`Found ${reports.length} reports to reprocess.`);
 
     const reportsDir = 'c:/Madhav/Programming/Port Authority/Financial Analysis Reports';
 
     for (const report of reports) {
       console.log(`\n========================================`);
-      console.log(`Reprocessing Report ID: ${report.id}, Year: ${report.year}, File: ${report.original_filename}`);
+      console.log(`Reprocessing Report ID: ${report.id}, Year: ${report.year}, Status: ${report.status}, File: ${report.original_filename}`);
       
       const filePath = path.join(reportsDir, report.original_filename);
       if (!fs.existsSync(filePath)) {
@@ -46,7 +46,13 @@ async function main() {
       console.log(`Deleting existing staging rows for report ${report.id}...`);
       await client.query('DELETE FROM report_rows_staging WHERE report_id = $1', [report.id]);
 
-      // 2. Insert new cleaned rows
+      // 2. If approved, delete from port_statistics as well
+      if (report.status === 'approved') {
+        console.log(`Deleting existing port_statistics rows for report ${report.id}...`);
+        await client.query('DELETE FROM port_statistics WHERE report_id = $1', [report.id]);
+      }
+
+      // 3. Insert new cleaned rows into staging
       console.log(`Inserting new cleaned rows for report ${report.id}...`);
       if (rows.length > 0) {
         const columns = [
@@ -115,7 +121,32 @@ async function main() {
         }
       }
 
-      // 3. Update report metadata
+      // 4. If approved, copy to port_statistics as well
+      if (report.status === 'approved') {
+        console.log(`Report is approved. Copying staging rows to port_statistics...`);
+        await client.query(
+          `INSERT INTO port_statistics (
+            report_id, invoice_date, invoice_amount, sor_amount, discount_amount,
+            currency, exchange_rate, amount_inr, party_name, party_code,
+            vessel_name, vessel_type, charge_name, invoice_group, sub_group,
+            account_code, commodity, commodity_group, sor_commodity, grt,
+            unit_quantity1, unit_quantity2, unit_rate, vcn, berth,
+            voyage_type, voyage_no, invoice_no, nature_of_ship, reference_no, year
+          )
+          SELECT
+            report_id, invoice_date, invoice_amount, sor_amount, discount_amount,
+            currency, exchange_rate, amount_inr, party_name, party_code,
+            vessel_name, vessel_type, charge_name, invoice_group, sub_group,
+            account_code, commodity, commodity_group, sor_commodity, grt,
+            unit_quantity1, unit_quantity2, unit_rate, vcn, berth,
+            voyage_type, voyage_no, invoice_no, nature_of_ship, reference_no, year
+          FROM report_rows_staging
+          WHERE report_id = $1`,
+          [report.id]
+        );
+      }
+
+      // 5. Update report metadata
       console.log(`Updating report metadata...`);
       await client.query(
         `UPDATE reports
@@ -135,7 +166,7 @@ async function main() {
     }
 
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
     console.error('Error during reprocessing:', err);
   } finally {
     client.release();

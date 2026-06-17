@@ -438,4 +438,74 @@ router.get('/tonnage-trends', async (req, res) => {
   }
 });
 
+// 9. GET /api/stats/vessel-visit-breakdown?year=2023
+router.get('/vessel-visit-breakdown', async (req, res) => {
+  try {
+    const yearParam = req.query.year;
+    let result;
+
+    if (yearParam === 'all') {
+      result = await pool.query(
+        `SELECT vessel_name as name, COUNT(DISTINCT vessel_name || vcn) as value
+         FROM port_statistics
+         GROUP BY vessel_name
+         ORDER BY value DESC`
+      );
+    } else {
+      const year = await getTargetYear(yearParam);
+      result = await pool.query(
+        `SELECT vessel_name as name, COUNT(DISTINCT vessel_name || vcn) as value
+         FROM port_statistics
+         WHERE year = $1
+         GROUP BY vessel_name
+         ORDER BY value DESC`,
+        [year]
+      );
+    }
+
+    res.json(result.rows.map(r => ({
+      name: r.name,
+      value: parseInt(r.value, 10) || 0,
+    })));
+  } catch (err) {
+    console.error('Vessel visit breakdown error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 10. GET /api/stats/vessel-revenue-breakdown?year=2023
+router.get('/vessel-revenue-breakdown', async (req, res) => {
+  try {
+    const yearParam = req.query.year;
+    let result;
+
+    if (yearParam === 'all') {
+      result = await pool.query(
+        `SELECT vessel_name as name, SUM(amount_inr) as value
+         FROM port_statistics
+         GROUP BY vessel_name
+         ORDER BY value DESC`
+      );
+    } else {
+      const year = await getTargetYear(yearParam);
+      result = await pool.query(
+        `SELECT vessel_name as name, SUM(amount_inr) as value
+         FROM port_statistics
+         WHERE year = $1
+         GROUP BY vessel_name
+         ORDER BY value DESC`,
+        [year]
+      );
+    }
+
+    res.json(result.rows.map(r => ({
+      name: r.name,
+      value: parseFloat(r.value) || 0,
+    })));
+  } catch (err) {
+    console.error('Vessel revenue breakdown error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

@@ -38,6 +38,21 @@ function parseExcelDate(val) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function isVesselPlaceholder(val) {
+  if (val === undefined || val === null) return true;
+  const str = String(val).trim().toUpperCase();
+  return (
+    str === '' ||
+    str === 'NA' ||
+    str === 'N.A.' ||
+    str === 'N/A' ||
+    str === 'NOT AVAILABLE' ||
+    str === 'NOTAVAILABLE' ||
+    str === 'UNKNOWN' ||
+    str === 'NULL' ||
+    str === 'UNDEFINED'
+  );
+}
 
 function cleanExcelFile(fileBuffer, reportYear) {
   const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
@@ -145,13 +160,13 @@ function cleanExcelFile(fileBuffer, reportYear) {
 
   // RULE 5: Vessel Name fill-forward (look forward for next valid name, with backward fallback)
   for (let i = 0; i < rows.length; i++) {
-    if (!rows[i].vessel_name || String(rows[i].vessel_name).trim() === '' || rows[i].vessel_name === 'Not Available') {
+    if (isVesselPlaceholder(rows[i].vessel_name)) {
       let found = false;
       
       // Search forward
       for (let j = i + 1; j < rows.length; j++) {
         const val = rows[j].vessel_name;
-        if (val && String(val).trim() !== '' && val !== 'Not Available') {
+        if (!isVesselPlaceholder(val)) {
           rows[i].vessel_name = val;
           found = true;
           break;
@@ -162,7 +177,7 @@ function cleanExcelFile(fileBuffer, reportYear) {
       if (!found) {
         for (let j = i - 1; j >= 0; j--) {
           const val = rows[j].vessel_name;
-          if (val && String(val).trim() !== '' && val !== 'Not Available') {
+          if (!isVesselPlaceholder(val)) {
             rows[i].vessel_name = val;
             found = true;
             break;

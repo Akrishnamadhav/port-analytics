@@ -15,8 +15,10 @@ import CreateUser from './pages/CreateUser';
 // Chart Pages
 import YearlyComparison from './pages/charts/YearlyComparison';
 import HistoricalTrends from './pages/charts/HistoricalTrends';
+import VesselVisitBreakdown from './pages/charts/VesselVisitBreakdown';
 import TopShippingLines from './pages/charts/TopShippingLines';
 import CompanyRevenueShare from './pages/charts/CompanyRevenueShare';
+import VesselRevenueBreakdown from './pages/charts/VesselRevenueBreakdown';
 import TonnageTrends from './pages/charts/TonnageTrends';
 
 export default function App() {
@@ -41,8 +43,10 @@ export default function App() {
             {/* Customs Report charts */}
             <Route path="/charts/yearly-comparison" element={<YearlyComparison />} />
             <Route path="/charts/historical-trends" element={<HistoricalTrends />} />
+            <Route path="/charts/vessel-visit-breakdown" element={<VesselVisitBreakdown />} />
             <Route path="/charts/top-shipping-lines" element={<TopShippingLines />} />
             <Route path="/charts/company-revenue-share" element={<CompanyRevenueShare />} />
+            <Route path="/charts/vessel-revenue-breakdown" element={<VesselRevenueBreakdown />} />
             <Route path="/charts/tonnage-trends" element={<TonnageTrends />} />
           </Route>
 

@@ -18,8 +18,10 @@ import { useAuth } from '../context/AuthContext';
 const chartSubItems = [
   { label: 'Yearly Comparison', path: '/charts/yearly-comparison' },
   { label: 'Historical Trends', path: '/charts/historical-trends' },
+  { label: 'Vessel Visit Breakdown', path: '/charts/vessel-visit-breakdown' },
   { label: 'Top Shipping Lines', path: '/charts/top-shipping-lines' },
   { label: 'Company Revenue Share', path: '/charts/company-revenue-share' },
+  { label: 'Vessel Revenue Breakdown', path: '/charts/vessel-revenue-breakdown' },
   { label: 'Tonnage Trends', path: '/charts/tonnage-trends' },
 ];
 
