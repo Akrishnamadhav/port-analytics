@@ -78,12 +78,19 @@ function cleanExcelFile(fileBuffer, reportYear) {
   // RULE 2: Drop rows with no Invoice Date
   rows = rows.filter(r => r.invoice_date !== undefined && r.invoice_date !== null && String(r.invoice_date).trim() !== '');
 
-  // RULE 3: Numeric blanks → 0
+  // RULE 3: Numeric blanks → 0 (convert currency amounts to absolute positive values)
   const numericFields = ['invoice_amount', 'sor_amount', 'discount_amount', 'unit_quantity1', 'unit_quantity2', 'unit_rate', 'exchange_rate', 'grt'];
+  const amountFields = ['invoice_amount', 'sor_amount', 'discount_amount'];
   rows.forEach(r => {
     numericFields.forEach(f => {
-      const val = parseFloat(r[f]);
-      r[f] = isNaN(val) ? 0 : val;
+      let val = parseFloat(r[f]);
+      if (isNaN(val)) {
+        val = 0;
+      }
+      if (amountFields.includes(f)) {
+        val = Math.abs(val);
+      }
+      r[f] = val;
     });
   });
 
@@ -120,10 +127,10 @@ function cleanExcelFile(fileBuffer, reportYear) {
     }
   }
 
-  // RULE 6: Currency normalization
+  // RULE 6: Currency normalization (absolute positive value)
   rows.forEach(r => {
     if (r.exchange_rate === 0) r.exchange_rate = 1; // avoid zero multiplication
-    r.amount_inr = r.invoice_amount * r.exchange_rate;
+    r.amount_inr = Math.abs(r.invoice_amount * r.exchange_rate);
   });
 
   // Parse invoice_date to proper date
