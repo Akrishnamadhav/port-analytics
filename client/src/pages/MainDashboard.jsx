@@ -33,6 +33,14 @@ const truncateName = (str, len = 20) => {
   if (!str) return '';
   return str.length > len ? str.slice(0, len) + '...' : str;
 };
+
+const formatMetricValue = (num) => {
+  if (num === null || num === undefined || isNaN(num)) return '0';
+  const abs = Math.abs(num);
+  if (abs >= 1e7) return `${(num / 1e7).toFixed(2)} Cr`;
+  if (abs >= 1e5) return `${(num / 1e5).toFixed(2)} L`;
+  return num.toLocaleString('en-IN');
+};
 const CHART_COLORS = ['#003366', '#d4a843', '#004080', '#059669', '#dc2626', '#8b5cf6', '#06b6d4', '#f97316'];
 
 export default function MainDashboard() {
@@ -115,6 +123,7 @@ export default function MainDashboard() {
     {
       label: 'Total Revenue',
       value: formatINR(latestYear.revenue),
+      subValue: latestYear.revenue !== undefined ? `₹${parseFloat(latestYear.revenue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null,
       icon: IndianRupee,
       gradient: 'bg-gradient-to-br from-port-navy to-port-navy-light text-white',
     },
@@ -126,13 +135,14 @@ export default function MainDashboard() {
     },
     {
       label: 'Total Tonnage',
-      value: latestYear.tonnage?.toLocaleString() ?? '0',
+      value: formatMetricValue(latestYear.tonnage),
+      subValue: latestYear.tonnage !== undefined ? `${parseFloat(latestYear.tonnage).toLocaleString('en-IN')}` : null,
       icon: Package,
       gradient: 'bg-gradient-to-br from-emerald-600 to-emerald-400 text-white',
     },
     {
       label: 'Total Invoices',
-      value: latestYear.invoices?.toLocaleString() ?? '0',
+      value: latestYear.invoices?.toLocaleString('en-IN') ?? '0',
       icon: FileText,
       gradient: 'bg-gradient-to-br from-blue-600 to-blue-400 text-white',
     },
@@ -176,7 +186,12 @@ export default function MainDashboard() {
               className={`${card.gradient} rounded-xl p-6 shadow-lg`}
             >
               <Icon className="w-10 h-10 opacity-80" />
-              <div className="text-3xl font-bold mt-3">{card.value}</div>
+              <div className="text-2xl sm:text-3xl font-bold mt-3 truncate" title={card.value}>{card.value}</div>
+              {card.subValue && (
+                <div className="text-xs opacity-75 font-medium mt-0.5 truncate" title={card.subValue}>
+                  {card.subValue}
+                </div>
+              )}
               <div className="text-sm opacity-80 mt-1">{card.label}</div>
             </div>
           );

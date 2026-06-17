@@ -19,6 +19,11 @@ const formatINR = (num) => {
   return `₹${num.toLocaleString('en-IN')}`;
 };
 
+const truncateName = (str, len = 22) => {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '...' : str;
+};
+
 const TopShippingLines = () => {
   const [years, setYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState('');
@@ -162,7 +167,8 @@ const TopShippingLines = () => {
             <YAxis
               type="category"
               dataKey="name"
-              width={150}
+              width={160}
+              tickFormatter={(val) => truncateName(val, 22)}
               tick={{ fontSize: 11, fill: '#64748b' }}
               axisLine={false}
               tickLine={false}

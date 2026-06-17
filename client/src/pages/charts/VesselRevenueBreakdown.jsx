@@ -7,6 +7,7 @@ import {
   Legend,
   ResponsiveContainer,
   Sector,
+  Label,
 } from 'recharts';
 import { Ship, Loader2, BarChart3 } from 'lucide-react';
 import api from '../../api/axios';
@@ -184,6 +185,18 @@ const VesselRevenueBreakdown = () => {
                     stroke="none"
                   />
                 ))}
+                <Label
+                  value="Total Revenue"
+                  position="center"
+                  dy={-10}
+                  style={{ fontSize: '13px', fill: '#6b7280', fontWeight: 500 }}
+                />
+                <Label
+                  value={formatINR(totalRevenue)}
+                  position="center"
+                  dy={12}
+                  style={{ fontSize: '18px', fill: '#1a1a2e', fontWeight: 700 }}
+                />
               </Pie>
               <Tooltip
                 formatter={(value, name) => [formatINR(value), name]}
@@ -204,21 +217,6 @@ const VesselRevenueBreakdown = () => {
               />
             </PieChart>
           </ResponsiveContainer>
-
-          {/* Center Label */}
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              top: '45%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <div className="text-center">
-              <p className="text-sm text-port-muted">Total Revenue</p>
-              <p className="text-xl font-bold text-port-text">{formatINR(totalRevenue)}</p>
-            </div>
-          </div>
         </div>
       )}
     </div>
