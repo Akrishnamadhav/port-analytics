@@ -40,7 +40,7 @@ const CreateUser = () => {
       setPassword('');
       setRole('viewer');
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Failed to create user');
+      setMessage(err.response?.data?.error || err.response?.data?.message || 'Failed to create user');
       setMessageType('error');
     } finally {
       setLoading(false);

@@ -46,7 +46,7 @@ const MyUploads = () => {
   useEffect(() => {
     const fetchUploads = async () => {
       try {
-        const res = await api.get('/api/reports/my-uploads');
+        const res = await api.get('/api/reports/mine');
         const sorted = (res.data || []).sort(
           (a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at)
         );
@@ -105,7 +105,7 @@ const MyUploads = () => {
                   className="border-b border-gray-100 hover:bg-gray-50 text-sm"
                 >
                   <td className="px-4 py-3 text-port-text font-medium">
-                    {upload.filename}
+                    {upload.original_filename}
                   </td>
                   <td className="px-4 py-3 text-port-text">{upload.year}</td>
                   <td className="px-4 py-3">
@@ -115,7 +115,7 @@ const MyUploads = () => {
                     {upload.row_count?.toLocaleString() ?? '-'}
                   </td>
                   <td className="px-4 py-3 text-port-text font-medium">
-                    {formatINR(upload.revenue)}
+                    {formatINR(upload.total_revenue_preview)}
                   </td>
                   <td className="px-4 py-3 text-port-muted">
                     {formatDate(upload.uploaded_at)}

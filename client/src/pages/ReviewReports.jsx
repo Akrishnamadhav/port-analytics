@@ -62,10 +62,10 @@ const ReviewReports = () => {
   const fetchStagingData = async (reportId, page = 1) => {
     try {
       setStagingLoading(true);
-      const res = await api.get(`/api/reports/${reportId}/staging?page=${page}&limit=20`);
-      setStagingData(res.data.data || []);
-      setStagingPage(res.data.page || page);
-      setStagingTotalPages(res.data.totalPages || 1);
+      const res = await api.get(`/api/reports/${reportId}?page=${page}&limit=20`);
+      setStagingData(res.data.rows || []);
+      setStagingPage(res.data.pagination?.page || page);
+      setStagingTotalPages(res.data.pagination?.totalPages || 1);
     } catch (err) {
       console.error('Failed to fetch staging data:', err);
       setStagingData([]);
@@ -100,13 +100,13 @@ const ReviewReports = () => {
     const reportId = selectedReport._id || selectedReport.id;
     try {
       setActionLoading('approve');
-      await api.post(`/api/reports/${reportId}/approve`);
+      await api.patch(`/api/reports/${reportId}/approve`);
       setMessage('Report approved successfully!');
       closeModal();
       fetchPendingReports();
     } catch (err) {
       console.error('Failed to approve report:', err);
-      setMessage('Failed to approve report.');
+      setMessage(err.response?.data?.error || 'Failed to approve report.');
     } finally {
       setActionLoading('');
     }
@@ -116,13 +116,13 @@ const ReviewReports = () => {
     const reportId = selectedReport._id || selectedReport.id;
     try {
       setActionLoading('reject');
-      await api.post(`/api/reports/${reportId}/reject`, { reason: rejectReason });
+      await api.patch(`/api/reports/${reportId}/reject`, { reason: rejectReason });
       setMessage('Report rejected successfully.');
       closeModal();
       fetchPendingReports();
     } catch (err) {
       console.error('Failed to reject report:', err);
-      setMessage('Failed to reject report.');
+      setMessage(err.response?.data?.error || 'Failed to reject report.');
     } finally {
       setActionLoading('');
     }
@@ -202,12 +202,12 @@ const ReviewReports = () => {
                       {report.uploader?.name || report.uploader_name || '-'}
                     </td>
                     <td className="px-4 py-3 text-port-text">{report.year}</td>
-                    <td className="px-4 py-3 text-port-text">{report.filename}</td>
+                    <td className="px-4 py-3 text-port-text">{report.original_filename}</td>
                     <td className="px-4 py-3 text-port-text">
                       {report.row_count?.toLocaleString() ?? '-'}
                     </td>
                     <td className="px-4 py-3 text-port-text font-medium">
-                      {formatINR(report.revenue)}
+                      {formatINR(report.total_revenue_preview)}
                     </td>
                     <td className="px-4 py-3 text-port-muted">
                       {formatDate(report.uploaded_at)}
@@ -255,7 +255,7 @@ const ReviewReports = () => {
                 <div className="bg-port-bg rounded-lg p-3">
                   <p className="text-xs text-port-muted">Filename</p>
                   <p className="text-sm font-semibold text-port-text truncate">
-                    {selectedReport.filename}
+                    {selectedReport.original_filename}
                   </p>
                 </div>
                 <div className="bg-port-bg rounded-lg p-3">
@@ -267,7 +267,7 @@ const ReviewReports = () => {
                 <div className="bg-port-bg rounded-lg p-3">
                   <p className="text-xs text-port-muted">Revenue</p>
                   <p className="text-sm font-semibold text-port-text">
-                    {formatINR(selectedReport.revenue)}
+                    {formatINR(selectedReport.total_revenue_preview)}
                   </p>
                 </div>
               </div>

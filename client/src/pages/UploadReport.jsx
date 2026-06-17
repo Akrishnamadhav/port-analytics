@@ -83,7 +83,7 @@ const UploadReport = () => {
         fileInputRef.current.value = '';
       }
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Upload failed. Please try again.');
+      setMessage(err.response?.data?.error || err.response?.data?.message || 'Upload failed. Please try again.');
       setMessageType('error');
     } finally {
       setUploading(false);
