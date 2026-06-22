@@ -141,7 +141,7 @@ router.get('/historical-trends', async (req, res) => {
     const rangeParam = req.query.range;
     let result;
 
-    if (rangeParam) {
+    if (rangeParam && rangeParam !== 'all') {
       const range = parseInt(rangeParam, 10);
       const currentYear = new Date().getFullYear();
       const startYear = currentYear - range;
@@ -154,6 +154,7 @@ router.get('/historical-trends', async (req, res) => {
         [startYear]
       );
     } else {
+      // Default: return all years with reports
       result = await pool.query(
         `SELECT year, SUM(amount_inr) as revenue
          FROM port_statistics
