@@ -19,6 +19,7 @@ import VesselVisitBreakdown from './pages/charts/VesselVisitBreakdown';
 import TopShippingLines from './pages/charts/TopShippingLines';
 import CompanyRevenueShare from './pages/charts/CompanyRevenueShare';
 import VesselRevenueBreakdown from './pages/charts/VesselRevenueBreakdown';
+import RevenueTrends from './pages/charts/RevenueTrends';
 import TonnageTrends from './pages/charts/TonnageTrends';
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/charts/top-shipping-lines" element={<TopShippingLines />} />
             <Route path="/charts/company-revenue-share" element={<CompanyRevenueShare />} />
             <Route path="/charts/vessel-revenue-breakdown" element={<VesselRevenueBreakdown />} />
+            <Route path="/charts/revenue-trends" element={<RevenueTrends />} />
             <Route path="/charts/tonnage-trends" element={<TonnageTrends />} />
           </Route>
 

@@ -22,6 +22,7 @@ const chartSubItems = [
   { label: 'Top Shipping Lines', path: '/charts/top-shipping-lines' },
   { label: 'Company Revenue Share', path: '/charts/company-revenue-share' },
   { label: 'Vessel Revenue Breakdown', path: '/charts/vessel-revenue-breakdown' },
+  { label: 'Revenue Trends', path: '/charts/revenue-trends' },
   { label: 'Tonnage Trends', path: '/charts/tonnage-trends' },
 ];
 

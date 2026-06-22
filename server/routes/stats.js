@@ -138,18 +138,30 @@ router.get('/yearly-comparison', async (req, res) => {
 // 2. GET /api/stats/historical-trends?range=5
 router.get('/historical-trends', async (req, res) => {
   try {
-    const range = parseInt(req.query.range, 10) || 5;
-    const currentYear = new Date().getFullYear();
-    const startYear = currentYear - range;
+    const rangeParam = req.query.range;
+    let result;
 
-    const result = await pool.query(
-      `SELECT year, SUM(amount_inr) as revenue
-       FROM port_statistics
-       WHERE year >= $1 AND year IN (SELECT DISTINCT year FROM reports)
-       GROUP BY year
-       ORDER BY year`,
-      [startYear]
-    );
+    if (rangeParam) {
+      const range = parseInt(rangeParam, 10);
+      const currentYear = new Date().getFullYear();
+      const startYear = currentYear - range;
+      result = await pool.query(
+        `SELECT year, SUM(amount_inr) as revenue
+         FROM port_statistics
+         WHERE year >= $1 AND year IN (SELECT DISTINCT year FROM reports)
+         GROUP BY year
+         ORDER BY year`,
+        [startYear]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT year, SUM(amount_inr) as revenue
+         FROM port_statistics
+         WHERE year IN (SELECT DISTINCT year FROM reports)
+         GROUP BY year
+         ORDER BY year`
+      );
+    }
 
     res.json(result.rows.map(r => ({
       year: r.year,
@@ -504,6 +516,52 @@ router.get('/vessel-revenue-breakdown', async (req, res) => {
     })));
   } catch (err) {
     console.error('Vessel revenue breakdown error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 11. GET /api/stats/revenue-trends?granularity=yearly&year=2023
+router.get('/revenue-trends', async (req, res) => {
+  try {
+    const granularity = req.query.granularity || 'yearly';
+
+    let result;
+    if (granularity === 'monthly') {
+      const yearParam = req.query.year;
+      if (yearParam === 'all') {
+        result = await pool.query(
+          `SELECT TO_CHAR(invoice_date, 'YYYY-MM') as name, SUM(amount_inr) as value
+           FROM port_statistics
+           GROUP BY name
+           ORDER BY name`
+        );
+      } else {
+        const year = await getTargetYear(yearParam);
+        result = await pool.query(
+          `SELECT TO_CHAR(invoice_date, 'YYYY-MM') as name, SUM(amount_inr) as value
+           FROM port_statistics
+           WHERE year = $1
+           GROUP BY name
+           ORDER BY name`,
+          [year]
+        );
+      }
+    } else {
+      // Default: yearly
+      result = await pool.query(
+        `SELECT year::text as name, SUM(amount_inr) as value
+         FROM port_statistics
+         GROUP BY year
+         ORDER BY year`
+      );
+    }
+
+    res.json(result.rows.map(r => ({
+      name: r.name,
+      value: parseFloat(r.value) || 0,
+    })));
+  } catch (err) {
+    console.error('Revenue trends error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
