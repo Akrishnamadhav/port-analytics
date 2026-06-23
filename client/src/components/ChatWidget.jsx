@@ -9,7 +9,7 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      text: "Hi! I'm PortBot 🚢 Ask me anything about port revenue, cargo, vessels, or financial performance.",
+      text: "Hi! I'm an AI assistant🚢 Ask me anything about port revenue, cargo, vessels, or financial performance.",
     },
   ]);
   const [input, setInput] = useState('');

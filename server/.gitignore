@@ -1,5 +1,6 @@
 # Environment variables — never commit secrets
 .env
+server/.env
 .env.*
 !.env.example
 
