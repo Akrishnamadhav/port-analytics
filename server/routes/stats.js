@@ -37,9 +37,9 @@ router.get('/summary', async (req, res) => {
       const result = await pool.query(
         `SELECT 
            SUM(amount_inr) as revenue,
-           COUNT(DISTINCT vessel_name || vcn) as vessels,
+           COUNT(DISTINCT vessel_name || vcn || year::text) as vessels,
            SUM(grt) as tonnage,
-           COUNT(DISTINCT invoice_no) as invoices
+           COUNT(DISTINCT invoice_no || year::text) as invoices
          FROM port_statistics`
       );
 
@@ -107,7 +107,7 @@ router.get('/yearly-comparison', async (req, res) => {
       }
       const placeholders = years.map((_, i) => `$${i + 1}`).join(', ');
       result = await pool.query(
-        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name) as vessels, SUM(grt) as tonnage
+        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name || vcn) as vessels, SUM(grt) as tonnage
          FROM port_statistics
          WHERE year IN (${placeholders})
          GROUP BY year
@@ -116,7 +116,7 @@ router.get('/yearly-comparison', async (req, res) => {
       );
     } else {
       result = await pool.query(
-        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name) as vessels, SUM(grt) as tonnage
+        `SELECT year, SUM(amount_inr) as revenue, COUNT(DISTINCT vessel_name || vcn) as vessels, SUM(grt) as tonnage
          FROM port_statistics
          GROUP BY year
          ORDER BY year`
@@ -288,7 +288,7 @@ router.get('/top-shipping-lines', async (req, res) => {
         );
       } else {
         result = await pool.query(
-          `SELECT party_name as name, COUNT(DISTINCT vessel_name || vcn) as value
+          `SELECT party_name as name, COUNT(DISTINCT vessel_name || vcn || year::text) as value
            FROM port_statistics
            GROUP BY party_name
            ORDER BY value DESC
@@ -459,7 +459,7 @@ router.get('/vessel-visit-breakdown', async (req, res) => {
 
     if (yearParam === 'all') {
       result = await pool.query(
-        `SELECT vessel_name as name, COUNT(DISTINCT vessel_name || vcn) as value
+        `SELECT vessel_name as name, COUNT(DISTINCT vessel_name || vcn || year::text) as value
          FROM port_statistics
          GROUP BY vessel_name
          ORDER BY value DESC`
