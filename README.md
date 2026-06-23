@@ -5,8 +5,9 @@ A complete, full-stack web application designed for a port authority to ingest a
 ---
 
 ## Technical Stack
-- **Frontend**: React (functional components + hooks), React Router v7, Tailwind CSS v4, Recharts, Lucide React icons, Axios.
+- **Frontend**: React (functional components + hooks), React Router v7, Tailwind CSS v4, Recharts, Lucide React icons, Axios. Includes a floating AI chat widget component.
 - **Backend**: Node.js + Express, REST API, Multer (restricted to `.xlsx`/`.xls`, 10MB limit), Cookie Parser, JSON Web Tokens (stored in HTTP-only cookies).
+- **AI Engine**: Gemini API (`gemini-3.1-flash-lite`) integrated natively on the server.
 - **Database**: PostgreSQL (single database, schema with multiple tables).
 - **Excel Parser**: `xlsx` (SheetJS).
 - **Auth**: Passwords hashed with `bcrypt` before storing. Sessions verified via Express middleware.
@@ -35,12 +36,18 @@ Consistent with the build specification, several key architectural and design de
    - Authentication cookie (`token`) is issued with `httpOnly: true`, `sameSite: 'lax'`, and `secure: false` (for local development).
    - Roles are checked on the frontend React Context/routes (UX only) and enforced on the backend via Express JWT verify and role middleware (real security gate). Any route accessed without authority returns a `401` or `403` status.
 
+6. **Gemini-Powered AI Chatbot ("PortBot")**:
+   We implemented an interactive, floating chatbot widget in the bottom-right of the dashboard:
+   - **Backend Aggregation & Context**: When a user queries PortBot, the backend fetches live vessel counts, revenue share breakdowns, cargo volumes, and operating costs in parallel. It serializes these into a compact JSON string and injects them into Gemini's system instructions as live context.
+   - **Domain Scoping**: We restricted PortBot to answer questions *only* about port operations, statistics, and financial performance. If the user asks off-topic questions (e.g. coding or general knowledge), the bot politely declines and redirects them back to port analytics.
+   - **Security**: The API call is secured behind our authentication middleware. In addition, the API key is read from `.env` (excluded from git), and we added fallbacks to prevent database connection crashes if local config files are modified.
+
 ---
 
 ## Database Configuration & Local Setup
 
 ### 1. Database Configuration
-Update the `.env` file in the `server/` directory if your local PostgreSQL details are different:
+Update the `.env` file in the `server/` directory if your local PostgreSQL details or API keys are different:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -49,6 +56,7 @@ DB_USER=admin
 DB_PASSWORD=admin123
 JWT_SECRET=port-authority-jwt-secret-change-in-production
 PORT=5000
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
 
 *Note: The seeded configuration matches the default credentials from the user's running docker postgres environment.*
