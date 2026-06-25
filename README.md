@@ -27,7 +27,7 @@ Consistent with the build specification, several key architectural and design de
    Vessel Gross Register Tonnage (`grt`) was used as the primary metric for cargo tonnage trends. Both `unit_quantity1` and `unit_quantity2` are cleaned and stored in staging and stats tables, but GRT was mapped as the weight metric for the "Tonnage Trends" composed line/bar chart.
 
 3. **Profit vs. Expenses**:
-   Operating costs are not available in the report uploads. We added an admin-only form in the frontend (accessible via the "Review Reports" screen or a dedicated entry section) that sends data to `POST /api/expenses`. This inserts or updates an annual operating cost in the `operating_expenses` table. The "Profit vs. Expenses" chart queries both `port_statistics` and `operating_expenses` per year, displaying income vs operating costs side-by-side.
+   Operating costs are not available in the report uploads. I added an admin-only form in the frontend (accessible via the "Review Reports" screen or a dedicated entry section) that sends data to `POST /api/expenses`. This inserts or updates an annual operating cost in the `operating_expenses` table. The "Profit vs. Expenses" chart queries both `port_statistics` and `operating_expenses` per year, displaying income vs operating costs side-by-side.
 
 4. **Lookup Tables for Categories (Revenue & Cargo Breakdown)**:
    Rather than scattered string checks, we created explicit tables `revenue_category_map` and `cargo_category_map` to map raw spreadsheet invoice groups or commodity groups to human-readable buckets (e.g. "Docking Fees", "Containers", etc.) with an "Other" fallback. These are pre-seeded via `db/seed.sql` and can be customized.
@@ -37,10 +37,23 @@ Consistent with the build specification, several key architectural and design de
    - Roles are checked on the frontend React Context/routes (UX only) and enforced on the backend via Express JWT verify and role middleware (real security gate). Any route accessed without authority returns a `401` or `403` status.
 
 6. **Gemini-Powered AI Chatbot ("PortBot")**:
-   We implemented an interactive, floating chatbot widget in the bottom-right of the dashboard:
-   - **Backend Aggregation & Context**: When a user queries PortBot, the backend fetches live vessel counts, revenue share breakdowns, cargo volumes, and operating costs in parallel. It serializes these into a compact JSON string and injects them into Gemini's system instructions as live context.
-   - **Domain Scoping**: We restricted PortBot to answer questions *only* about port operations, statistics, and financial performance. If the user asks off-topic questions (e.g. coding or general knowledge), the bot politely declines and redirects them back to port analytics.
-   - **Security**: The API call is secured behind our authentication middleware. In addition, the API key is read from `.env` (excluded from git), and we added fallbacks to prevent database connection crashes if local config files are modified.
+   I built and integrated a custom, context-aware chatbot widget called **PortBot** in the React dashboard. It acts as an interactive assistant to help users query complex port statistics using natural language:
+   - **Frontend UI & Interactive States**:
+     - Built a floating circular button in the bottom-right corner styled with our primary `port-navy` theme (`bg-[#003366]`).
+     - Toggling the button opens a clean slide-up chat panel (`w-80 h-[420px]`) featuring a header, scrollable messages history, and an input box.
+     - Implemented key interactive states: a message feed with user and model chat bubbles, a staggered bounce-animated typing indicator to show when the AI is processing, and automatic smooth scroll-to-bottom on new messages.
+     - The input textarea supports standard single-line feel with an Enter-to-submit key listener (permitting `Shift+Enter` for multiline inputs).
+   - **Backend Aggregation Pipeline (`server/routes/chat.js`)**:
+     - When a user sends a query, the backend server fetches real-time port analytics by executing four database queries in parallel using `Promise.all` (gathering recent yearly aggregates, detailed revenue categories, cargo group breakdowns, and recent operating expenses).
+     - These metrics are serialized into a compact JSON string and injected directly into Gemini's system instructions as a live statistics context.
+   - **Security, Auth, & Key Management**:
+     - The `/api/chat` route is protected behind the server's existing token-verification middleware, ensuring only authenticated users can access the endpoint.
+     - The chat client automatically tracks session state and is hidden on the login screen.
+     - I configured it to read the Gemini API key from `server/.env` (which is excluded from Git), and loaded robust defaults in `server/index.js` to ensure the server remains stable even if `.env` keys are updated.
+   - **Robust Prompt Guardrails & Limits**:
+     - **Scoping Instructions**: PortBot is strictly instruction-constrained to Cochin Port analytics. If a user asks off-topic questions (such as writing code or general information), the model is prompted to decline politely using a standardized refusal message.
+     - **History Pruning**: To prevent token bloat and save bandwidth, the backend slices and retains only the last 10 messages of conversation history.
+     - **Database Failure Fallback**: If the database queries encounter an exception, the system catches the error and injects a fallback notice (`"Live data is temporarily unavailable."`) into the prompt, letting the model continue answering general queries gracefully instead of crashing the endpoint.
 
 ---
 
